@@ -5,7 +5,7 @@ import inspect
 
 from typing import Dict, Any, Callable
 
-
+# region Numerix
 class Numerix:
     """
     Base class for numerical method implementations.
@@ -21,7 +21,6 @@ class Numerix:
         self.__min_x = None
         self.__max_x = None
 
-        self.initiator = None
         self.iterations = pd.DataFrame()
 
         self.functions: list[Callable] = []
@@ -45,7 +44,7 @@ class Numerix:
 
         self.iterations.loc[len(self.iterations)] = iteration
 
-        self.__find_min_max_x(iteration)
+        self.__challenge_min_max_x(iteration)
 
         if self.__is_verbose:
             print(iteration)
@@ -76,6 +75,24 @@ class Numerix:
 
         if self.__is_verbose:
             print(f"Function added with " f"{arg_count} argument(s).")
+
+    # region Calculation
+    def get_tolerance_from_significant_digit(
+        self,
+        digits: int
+    ) -> float:
+
+        if digits <= 0:
+            raise ValueError(
+                "Significant digits must be positive."
+            )
+
+        tolerance = 0.5 * 10 ** (-digits)
+        return tolerance
+    
+    def calculate(self):
+        # to be overridden
+        pass
 
     # region Visualization
     def display_iterations(self):
