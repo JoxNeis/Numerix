@@ -1,127 +1,124 @@
+import numpy as np
 import pandas as pd
-from typing import Dict, Any
+import matplotlib.pyplot as plt
+import inspect
+
+from typing import Dict, Any, Callable
+
 
 class Numerix:
     """
     Base class for numerical method implementations.
-
-    This class provides common configuration utilities such as verbosity
-    control and structured logging. It is intended to be inherited by
-    concrete numerical method classes.
-
-    Attributes
-    ----------
-    is_verbose : bool
-        If True, enables verbose output for debugging or progress reporting.
-    is_logging : bool
-        If True, enables logging of runtime information into a pandas DataFrame.
-    logs : pd.DataFrame
-        DataFrame storing log entries. Initialized empty and populated via
-        `add_logs` when logging is enabled.
-    _log_columns : list[str]
-        Internal list defining the expected log schema (column names).
-        Determined by the first log entry and enforced for all subsequent logs.
-
-    Examples
-    --------
-    Basic usage with logging enabled:
-
-    >>> nx = Numerix(is_logging=True)
-    >>> nx.add_logs({"iter": 1, "loss": 0.5})
-    >>> nx.add_logs({"iter": 2, "loss": 0.25})
-    >>> list(nx.logs.columns)
-    ['iter', 'loss']
-    >>> len(nx.logs)
-    2
-
-    Logging disabled raises an error:
-
-    >>> nx = Numerix(is_logging=False)
-    >>> nx.add_logs({"iter": 1})
-    Traceback (most recent call last):
-    ...
-    RuntimeError: is_logging is set to False. Logging is not possible.
-
-    Inconsistent log schema raises an error:
-
-    >>> nx = Numerix(is_logging=True)
-    >>> nx.add_logs({"iter": 1, "loss": 0.5})
-    >>> nx.add_logs({"iteration": 2, "loss": 0.25})
-    Traceback (most recent call last):
-    ...
-    ValueError: Log keys do not match previous logs. Ensure consistent log structure for every entry.
     """
 
-    def __init__(self, is_verbose: bool = False, is_logging: bool = False):
+    def __init__(self, is_verbose: bool = False):
+
+        self.__is_verbose = is_verbose
+
+        self.__columns: list[str] = []
+        self.__linespaces: list[tuple[np.ndarray, np.ndarray]] = []
+
+        self.__min_x = None
+        self.__max_x = None
+
+        self.initiator = None
+        self.iterations = pd.DataFrame()
+
+        self.functions: list[Callable] = []
+        self.argument_count: int | None = None
+
+    # region Properties
+    def __challenge_min_max_x(self, iteration):
+        pass
+
+    def _process_on_each_iterations(self, iteration: Dict[str, Any]):
+        # to be overriden
+        pass
+
+    def add_iterations(self, iteration: Dict[str, Any]):
+        if not hasattr(self, "__columns"):
+            self.__columns = list(iteration.keys())
+            self.iterations = pd.DataFrame(columns=self.__columns)
+
+        if list(iteration.keys()) != self.__columns:
+            raise ValueError("Iteration columns do not match previous entries.")
+
+        self.iterations.loc[len(self.iterations)] = iteration
+
+        self.__find_min_max_x(iteration)
+
+        if self.__is_verbose:
+            print(iteration)
+
+    def add_function(self, function: Callable):
         """
-        Initialize the Numerix base class.
-
-        Parameters
-        ----------
-        is_verbose : bool, optional
-            Enables verbose output if set to True.
-        is_logging : bool, optional
-            Enables logging functionality if set to True.
-
-        Examples
-        --------
-        >>> nx = Numerix()
-        >>> nx.is_verbose
-        False
-        >>> nx.is_logging
-        False
+        Store mathematical function and enforce
+        consistent argument count.
         """
-        self.is_verbose = is_verbose
-        self.is_logging = is_logging
-        self.logs = pd.DataFrame()
-        self._log_columns: list[str] = []
 
-    def add_logs(self, log: Dict[str, Any]):
-        """
-        Add a log entry to the internal log DataFrame.
+        if not callable(function):
+            raise TypeError("Function must be callable.")
 
-        The first call initializes the logging schema using the keys of
-        the provided dictionary. All subsequent calls must provide
-        dictionaries with identical keys and order.
+        signature = inspect.signature(function)
+        arg_count = len(signature.parameters)
 
-        Parameters
-        ----------
-        log : Dict[str, Any]
-            A dictionary representing a single log entry.
+        if not hasattr(self, "argument_count"):
+            self.argument_count = arg_count
 
-        Raises
-        ------
-        RuntimeError
-            If logging is disabled.
-        ValueError
-            If the log dictionary keys do not match the existing schema.
-
-        Examples
-        --------
-        >>> nx = Numerix(is_logging=True)
-        >>> nx.add_logs({"step": 1, "value": 10})
-        >>> nx.add_logs({"step": 2, "value": 8})
-        >>> nx.logs.iloc[0]["value"]
-        10
-
-        >>> nx.add_logs({"step": 3, "val": 5})
-        Traceback (most recent call last):
-        ...
-        ValueError: Log keys do not match previous logs. Ensure consistent log structure for every entry.
-        """
-        if not self.is_logging:
-            raise RuntimeError(
-                "is_logging is set to False. Logging is not possible."
+        if arg_count != self.argument_count:
+            raise ValueError(
+                "Function argument count mismatch. "
+                f"Expected {self.argument_count}, "
+                f"got {arg_count}."
             )
 
-        if not self._log_columns:
-            self._log_columns = list(log.keys())
-            self.logs = pd.DataFrame(columns=self._log_columns)
-        else:
-            if list(log.keys()) != self._log_columns:
-                raise ValueError(
-                    "Log keys do not match previous logs. "
-                    "Ensure consistent log structure for every entry."
-                )
+        self.functions.append(function)
 
-        self.logs.loc[len(self.logs)] = log
+        if self.__is_verbose:
+            print(f"Function added with " f"{arg_count} argument(s).")
+
+    # region Visualization
+    def display_iterations(self):
+        if self.iterations.empty:
+            print("No iterations recorded.")
+            return
+
+        print(self.iterations)
+
+    def __create_linespace(self, function: Callable):
+        if self.__min_x is None or self.__max_x is None:
+            return
+
+        x = np.linspace(self.__min_x, self.__max_x)
+        y = function(x)
+        self.__linespaces.append((x, y))
+
+    def __create_linespaces_for_all(self):
+        self.__linespaces.clear()
+
+        for function in self.functions:
+            self.__create_linespace(function)
+
+    def __create_plot_from_linespace(self):
+        for i, ((x, y), func) in enumerate(zip(self.__linespaces, self.functions)):
+            name = getattr(func, "__name__", f"f{i+1}")
+            if name == "<lambda>":
+                name = f"f{i+1}"
+            plt.plot(x, y, label=f"{name}(x)")
+
+    def plot_iterations(self, **plot_kwargs):
+        if not self.functions:
+            raise RuntimeError("No functions added.")
+
+        self.__create_linespaces_for_all()
+        self.__create_plot_from_linespace()
+
+        plt.axhline(0)
+        plt.axvline(0)
+
+        plt.grid(True)
+
+        if plot_kwargs.get("legend", True):
+            plt.legend()
+
+        plt.show()
