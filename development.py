@@ -8,6 +8,187 @@ import math
 from typing import Dict, Any, Callable
 
 
+# region VISUALIZER
+class Visualizer:
+    def __init__(self):
+        self._fig, self._axes = plt.subplots()
+
+    # region LINESPACE
+    def _create_linespace(
+        self,
+        function: Callable,
+        begin: float,
+        end: float,
+        offset: float,
+        data_points: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        begin -= offset
+        end += offset
+
+        points = (
+            int(data_points) if data_points > 0 else max(int((end - begin) * 10), 400)
+        )
+
+        x = np.linspace(begin, end, points)
+        y = function(x)
+
+        return x, y
+
+    def _create_linespaces(
+        self,
+        functions: list[Callable],
+        begin: float,
+        end: float,
+        offset: float = 5,
+        data_points: int = 0,
+    ) -> list[tuple[np.ndarray, np.ndarray]]:
+
+        return [
+            self._create_linespace(
+                func,
+                begin,
+                end,
+                offset,
+                data_points,
+            )
+            for func in functions
+        ]
+
+    # endregion
+    # region PLOTTING
+    # region CARTESIAN
+    def __create_cartesian_plane(
+        self,
+        axis_color="black",
+        axis_width=1,
+        grid_style="--",
+        grid_width=0.5,
+        grid_transparency=0.4,
+    ) -> None:
+        self._axes.axhline(0, color=axis_color, linewidth=axis_width, label="X")
+        self._axes.axvline(0, color=axis_color, linewidth=axis_width, label="Y")
+
+        self._axes.grid(
+            True,
+            linestyle=grid_style,
+            linewidth=grid_width,
+            alpha=grid_transparency,
+        )
+
+    def custom_cartesian_plane(
+        self,
+        axis_color="black",
+        axis_width=1,
+        grid_style="--",
+        grid_width=0.5,
+        grid_transparency=0.4,
+    ) -> None:
+        self.__create_cartesian_plane(
+            axis_color, axis_width, grid_style, grid_width, grid_transparency
+        )
+
+    # endregion
+    # region GRAPH
+    def __get_symbol_name(
+        self,
+        function: Callable,
+        index: int,
+    ) -> str:
+
+        name = getattr(function, "__name__", None)
+
+        if not name or name == "<lambda>":
+            name = f"f{index}"
+
+        return name
+
+    def __plot_functions(
+        self,
+        linespaces: list[tuple[np.ndarray, np.ndarray]],
+        functions: list[Callable],
+    ) -> None:
+
+        for i, ((x, y), func) in enumerate(
+            zip(linespaces, functions),
+            start=1,
+        ):
+
+            name = self.__get_symbol_name(func, i)
+
+            self._axes.plot(
+                x,
+                y,
+                label=f"{name}(x)",
+                linewidth=1.5,
+            )
+
+    def create_graph(
+        self,
+        functions: list[Callable],
+        begin: float,
+        end: float,
+        offset: float = 5,
+        data_points: int = 0,
+        cartesian_plane: bool = True,
+    ):
+
+        linespaces = self._create_linespaces(
+            functions,
+            begin,
+            end,
+            offset,
+            data_points,
+        )
+
+        self.__plot_functions(
+            linespaces,
+            functions,
+        )
+
+        if cartesian_plane:
+            self.__create_cartesian_plane()
+        self._axes.legend()
+
+        return self._axes
+
+    # endregion
+    # region GRAPH PROPERTIES
+    def create_anotation(self):
+        pass
+
+    def create_dot(self):
+        pass
+
+    def create_vertical_span(self):
+        pass
+
+    def create_vertical_line(self):
+        pass
+
+    def create_horizontal_line(self):
+        pass
+
+    def create_horizontal_span(self):
+        pass
+
+    # endregion
+
+
+    # region ANIMATION
+
+    # endregion
+    #endregion
+    # region SHOW
+    def show(self) -> None:
+        self._fig.tight_layout()
+        plt.show()
+
+    def clear(self) -> None:
+        self._axes.cla()
+
+    # endregion
+# endregion
+
 # region Numerix
 class Numerix:
     """
@@ -17,9 +198,7 @@ class Numerix:
     def __init__(self, is_verbose: bool = False):
 
         self._is_verbose = is_verbose
-
-        self._columns: list[str] = []
-        self.__linespaces: list[tuple[np.ndarray, np.ndarray]] = []
+        self.__visualizer = Visualizer()
 
         self._min_x: float = None
         self._max_x: float = None
@@ -39,12 +218,10 @@ class Numerix:
 
     def add_iterations(self, iteration: Dict[str, Any]):
         if self.iterations.empty:
-            self._columns = list(iteration.keys())
             self.iterations = pd.DataFrame([iteration])
         else:
             self.iterations.loc[len(self.iterations)] = iteration
-
-        self._challenge_min_max_x(iteration)
+        self._after_each_iteration(iteration)
 
         if self._is_verbose:
             print(iteration)
@@ -68,7 +245,6 @@ class Numerix:
                 f"Expected {self.argument_count}, "
                 f"got {arg_count}."
             )
-
         self.functions.append(function)
 
         if self._is_verbose:
@@ -98,6 +274,8 @@ class Numerix:
             return
         print(self.iterations)
 
+    # endregion
+
     # region Visualization
     def __create_linespace(self, function: Callable, offset=5, display_scale=1):
         if self._min_x is None or self._max_x is None:
@@ -121,34 +299,30 @@ class Numerix:
                 name = f"f{i+1}"
             plt.plot(x, y, label=f"{name}(x)")
 
-    def _create_plot_result_point(self):
-        pass
 
-    def plot_result(self,axis_color="black"): 
-        if not (len(self.iterations) > 0): 
-            raise RuntimeError("No data to plot.") 
-        self._create_linespaces_for_all() 
-        self._create_plot_from_linespace() 
-        self._create_plot_result_point() 
-        
-        plt.axhline(0,color=axis_color,label="X") 
-        plt.axvline(0,color=axis_color,label="Y") 
-        plt.grid(True) 
+    def plot_result(self, axis_color="black"):
+        if not (len(self.iterations) > 0):
+            raise RuntimeError("No data to plot.")
+        self._create_linespaces_for_all()
+        self._create_plot_from_linespace()
+        self._create_plot_result_point()
+
+        plt.axhline(0, color=axis_color, label="X")
+        plt.axvline(0, color=axis_color, label="Y")
+        plt.grid(True)
         plt.show()
-        
+
     def _create_animation_plot_from_linespace(self, ax):
         self._line_artists = []
 
-        for i, ((x, y), func) in enumerate(
-            zip(self.__linespaces, self.functions)
-        ):
+        for i, ((x, y), func) in enumerate(zip(self.__linespaces, self.functions)):
             name = getattr(func, "__name__", f"f{i+1}")
 
             if name == "<lambda>":
                 name = f"f{i+1}"
-            line, = ax.plot(x, y, label=f"{name}(x)")
+            (line,) = ax.plot(x, y, label=f"{name}(x)")
             self._line_artists.append(line)
-            
+
     def animate_iterations(self, axis_color="black", interval=400):
         if not (len(self.iterations) > 0):
             raise RuntimeError("No data to animate.")
@@ -172,10 +346,10 @@ class Numerix:
             self._update,
             frames=len(self.iterations),
             interval=interval,
-            blit=False
+            blit=False,
         )
 
-        plt.show()  
+        plt.show()
 
     # endregion
     # endregion
@@ -192,6 +366,7 @@ class Bracketing(Numerix):
         self.function: Callable | None = None
         self.argument_count = 1
 
+    # region Properties
     def _challenge_min_max_x(self, iteration):
         if self._min_x is None:
             self._min_x = float(iteration["lower"])
@@ -220,6 +395,9 @@ class Bracketing(Numerix):
 
         self.boundaries[0] = {"lower": lower, "upper": upper}
 
+    # endregion
+
+    # region Visualization
     def __draw_boundary_line(self, lower, upper, color, alpha, linewidth):
         plt.axvline(lower, color=color, alpha=alpha, linewidth=linewidth)
         plt.axvline(upper, color=color, alpha=alpha, linewidth=linewidth)
@@ -287,46 +465,28 @@ class Bracketing(Numerix):
 
         ax = self._ax
 
-        # Remove previous artists
         if hasattr(self, "_current_artists"):
             for artist in self._current_artists:
                 artist.remove()
 
         self._current_artists = []
 
-        # Draw span
-        span = ax.axvspan(
-            lower,
-            upper,
-            alpha=0.2
-        )
+        span = ax.axvspan(lower, upper, alpha=0.2)
 
-        # Lower bound line
         lower_line = ax.axvline(
             lower,
             linestyle="-",
         )
 
-        # Upper bound line
         upper_line = ax.axvline(
             upper,
             linestyle="-",
         )
 
-        # Midpoint line
-        mid_line = ax.axvline(
-            midpoint,
-            linestyle="--"
-        )
+        mid_line = ax.axvline(midpoint, linestyle="--")
 
-        # Midpoint dot
-        mid_dot = ax.plot(
-            midpoint,
-            f_mid,
-            marker="o"
-        )[0]
+        mid_dot = ax.plot(midpoint, f_mid, marker="o")[0]
 
-        # Iteration info box
         iter_text = ax.text(
             0.02,
             0.95,
@@ -339,98 +499,19 @@ class Bracketing(Numerix):
             transform=ax.transAxes,
             fontsize=9,
             verticalalignment="top",
-            bbox=dict(
-                boxstyle="round",
-                facecolor="white",
-                alpha=0.8
-            )
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
         )
 
-        # Store artists
-        self._current_artists.extend([
-            span,
-            lower_line,
-            upper_line,
-            mid_line,
-            mid_dot,
-            iter_text
-        ])
+        self._current_artists.extend(
+            [span, lower_line, upper_line, mid_line, mid_dot, iter_text]
+        )
 
         return self._current_artists
-         
+
+    # endregion
+
     def calculate(self):
         pass
 
 
 # endregion
-# region Bisection
-class Bisection(Bracketing):
-    def __init__(self,_is_verbose=False):
-        super().__init__(_is_verbose)
-
-    def calculate(self, tolerance: float = 1e-4, max_iterations: int = 100):
-        if not self.boundaries:
-            raise RuntimeError("Initial boundary not set.")
-
-        lower = self.boundaries[0]["lower"]
-        upper = self.boundaries[0]["upper"]
-
-        f_low = self.function(lower)
-        previous_midpoint = None
-
-        for iteration in range(max_iterations):
-            midpoint = (lower + upper) / 2
-            f_mid = self.function(midpoint)
-
-            ea = (
-                abs(midpoint - previous_midpoint)
-                if previous_midpoint is not None
-                else None
-            )
-            er = (ea / abs(midpoint)) if (ea is not None and midpoint != 0) else None
-
-            self.add_iterations(
-                {
-                    "iteration": iteration,
-                    "lower": lower,
-                    "upper": upper,
-                    "midpoint": midpoint,
-                    "f_mid": f_mid,
-                    "ea": ea,
-                    "er": er,
-                    "Ea": "Unknown",
-                    "Er": "Unknown",
-                }
-            )
-
-            if f_mid == 0 or (ea is not None and ea < tolerance):
-                if self._is_verbose:
-                    print("Iteration stopped, reached tolerance")
-                return midpoint
-
-            if f_low * f_mid < 0:
-                upper = midpoint
-            else:
-                lower = midpoint
-                f_low = f_mid
-
-            previous_midpoint = midpoint
-
-        return midpoint
-
-
-def test():
-    def f(x):
-        return x**2 - 4
-
-    solver = Bisection()
-    solver.add_function(f)
-    solver.set_initial_boundary(lower=0, upper=6)
-    root = solver.calculate()
-    print(f"Result: {root:.4f}")
-    solver.display_iterations()
-    solver.animate_iterations()
-
-
-if __name__ == "__main__":
-    test()
