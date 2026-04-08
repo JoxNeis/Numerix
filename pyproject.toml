@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "numerix"
+version = "0.0.1"
+requires-python = ">=3.10"
+dependencies = ["numpy","pandas","typing","matplotlib","inspect"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
