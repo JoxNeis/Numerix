@@ -17,6 +17,7 @@ class Numerix:
         self._min_x: float = None
         self._max_x: float = None
 
+        # TODO: Change to LIST OF DICTIONARY
         self.iterations = pd.DataFrame()
 
         self.functions: list[Callable] = []
@@ -51,7 +52,7 @@ class Numerix:
         signature = inspect.signature(function)
         arg_count = len(signature.parameters)
 
-        if not hasattr(self, "argument_count"):
+        if self.argument_count is None:
             self.argument_count = arg_count
 
         if arg_count != self.argument_count:
