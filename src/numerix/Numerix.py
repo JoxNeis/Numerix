@@ -26,6 +26,10 @@ class Numerix:
     def _after_each_iteration(self, iteration: Dict[str, Any]):
         # to be overriden
         pass
+    
+    def find_range(self):
+        # to be overridden
+        pass
 
     def add_iterations(self, iteration: Dict[str, Any]):
         if self.iterations.empty:
@@ -60,7 +64,6 @@ class Numerix:
 
         if self._is_verbose:
             print(f"Function added with " f"{arg_count} argument(s).")
-
     # endregion
 
     # region Calculation
@@ -83,8 +86,5 @@ class Numerix:
             print("No iterations recorded.")
             return
         print(self.iterations)
-
     # endregion
-
-
 # endregion
