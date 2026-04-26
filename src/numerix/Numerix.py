@@ -19,7 +19,35 @@ class Numerix:
         self.argument_count: int | None = None
 
     # region Properties
+    # region Error
+    def _compute_approximate_relative_error(self, new, old):
+        """
+        Compute approximate relative error (ea).
 
+        Parameters
+        ----------
+        new : float
+            Current approximation
+        old : float
+            Previous approximation
+
+        Returns
+        -------
+        float
+            Approximate relative error in percent (%)
+        """
+
+        if old is None:
+            return None
+
+        if new == 0:
+            return float("inf")
+
+        ea = ((new - old) / new)
+        return ea
+    # endregion
+
+    # region Iterations
     def _after_each_iteration(self, iteration: Dict[str, Any]):
         # to be overriden
         pass
@@ -30,11 +58,16 @@ class Numerix:
         if self._is_verbose:
             print(iteration)
 
+    def get_iterations(self):
+        return pd.DataFrame(self.iterations)
+
+    # endregion
+    # region Functions
     def __check_callable(self, function: Callable):
         if not callable(function):
             raise TypeError("Function must be callable.")
-        
-    def __check_arg_count(self,function:Callable):
+
+    def __check_arg_count(self, function: Callable):
         signature = inspect.signature(function)
         arg_count = len(signature.parameters)
         if self.argument_count is None:
@@ -45,12 +78,10 @@ class Numerix:
                 f"Expected {self.argument_count}, "
                 f"got {arg_count}."
             )
-        
 
     def _validate_function(self, function: Callable):
         self.__check_callable(function)
         self.__check_arg_count(function)
-        
 
     def add_function(self, function: Callable):
         """
@@ -60,8 +91,9 @@ class Numerix:
         self._validate_function(function)
         self.functions.append(function)
         if self._is_verbose:
-            print(f"Function added with " f"{arg_count} argument(s).")
+            print(f"Function added with " f"{self.argument_count} argument(s).")
 
+    # endregion
     # endregion
 
     # region Calculation
