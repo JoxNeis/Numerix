@@ -12,5 +12,5 @@ class Root(Numerix):
 
     @function.setter
     def function(self, value:Callable):
-        self._validate_function(value,check_arg=False)
+        self._check_callable(value)
         self._function = value

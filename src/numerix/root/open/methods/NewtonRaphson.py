@@ -12,7 +12,7 @@ class NewtonRaphson(Open):
 
     @derivative.setter
     def derivative(self, value: Callable):
-        self._validate_function(value, check_arg=False)
+        self._check_callable(value)
         self._derivative = value
 
     def calculate(self, x0, ea_tol=1e-6, res_tol=1e-6, max_iter=100):
@@ -88,6 +88,7 @@ class NewtonRaphson(Open):
 
             x = new_x
 
+        Warning(f"Method did not converge within {max_iter} iterations")
         return x
 
 

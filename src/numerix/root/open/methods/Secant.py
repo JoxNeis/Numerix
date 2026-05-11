@@ -77,6 +77,7 @@ class Secant(Open):
             x0, x1 = x1, x2
             f0, f1 = f1, f2
 
+        Warning(f"Method did not converge within {max_iter} iterations")
         return x2
     
 if __name__ == "__main__":

@@ -77,10 +77,9 @@ class Bisection(Bracketing):
                 if(self._is_verbose):
                     print(f"Bisection converged with: {mid}")
                 return mid
-
-        print(
-            f"Bisection method did not converge after {max_iter} iterations."
-        )
+        
+        Warning(f"Method did not converge within {max_iter} iterations")
+        return mid
         
 if __name__ == "__main__":
     import math

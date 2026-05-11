@@ -79,7 +79,8 @@ class RegulaFalsi(Bracketing):
                     print(f"RegulaFalsi converged with: {xr}")
                 return xr
 
-        print(f"RegulaFalsi method did not converge after {max_iter} iterations.")
+        Warning(f"Method did not converge within {max_iter} iterations")
+        return xr
 
 
 if __name__ == "__main__":

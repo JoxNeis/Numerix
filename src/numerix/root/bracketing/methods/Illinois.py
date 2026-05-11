@@ -87,9 +87,8 @@ class Illinois(Bracketing):
                     print(f"Illinois converged with: {xr}")
                 return xr
 
-        print(
-                f"Illinois method did not converge after {max_iter} iterations."
-            )
+        Warning(f"Method did not converge within {max_iter} iterations")
+        return xr
 
 if __name__ == "__main__":
     import math

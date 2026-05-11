@@ -15,8 +15,6 @@ class Numerix:
 
         self._is_verbose = is_verbose
         self.iterations: list[Dict[str, Any]] = []
-        self.functions: list[Callable] = []
-        self.argument_count: int | None = None
 
     # region Properties
     # region Error
@@ -63,37 +61,9 @@ class Numerix:
 
     # endregion
     # region Functions
-    def __check_callable(self, function: Callable):
+    def _check_callable(self, function: Callable):
         if not callable(function):
             raise TypeError("Function must be callable.")
-
-    def __check_arg_count(self, function: Callable):
-        signature = inspect.signature(function)
-        arg_count = len(signature.parameters)
-        if self.argument_count is None:
-            self.argument_count = arg_count
-        if arg_count != self.argument_count:
-            raise ValueError(
-                "Function argument count mismatch. "
-                f"Expected {self.argument_count}, "
-                f"got {arg_count}."
-            )
-
-    def _validate_function(self, function: Callable,check_arg = True):
-        self.__check_callable(function)
-        if check_arg:
-            self.__check_arg_count(function)
-
-    def add_function(self, function: Callable):
-        """
-        Store mathematical function and enforce
-        consistent argument count.
-        """
-        self._validate_function(function)
-        self.functions.append(function)
-        if self._is_verbose:
-            print(f"Function added with " f"{self.argument_count} argument(s).")
-
     # endregion
     # endregion
 
