@@ -29,32 +29,6 @@ class Jacobi(Sle):
 
         return new_args
 
-    def calculate(self, ea_tol=1e-6, max_iter=200):
-        if self._argument_count != len(self.functions):
-            raise ValueError(
-                f"Arguments count must be the same as the number of functions.\n"
-                + f"Arguments count: {self._argument_count}\n"
-                + f"Functions count: {len(self.functions)}"
-            )
-        self.iterations = []
-
-        args = self.create_first_arguments()
-        self.iterations.append(self.create_iteration(0,args))
-
-        for i in range(max_iter):
-            old_args = args
-            args = self._compute_next_arguments(old_args)
-            iteration = self.create_iteration(i+1,args, old_args)
-            self.iterations.append(iteration)
-            ea = iteration["|ea|"]
-            residuals = [abs(iteration[func.__name__]) for func in self.functions]
-            max_residual = max(residuals)
-            if ea is not None and ea < ea_tol:
-                return args
-        Warning(f"Method did not converge within {max_iter} iterations")
-        return args
-
-
 if __name__ == "__main__":
     # 10x - y + 2z = 6
     # -x + 11y - z = 25
@@ -95,6 +69,5 @@ if __name__ == "__main__":
     print(f"2x - y + 10z = {2*x - y + 10*z:.6f} (should be -11)")
 
     print("\nIterations:")
-    from tabulate import tabulate
-    print(tabulate(jacobi.get_iterations(), headers='keys', tablefmt='psql'))
+    print(jacobi.get_iterations())
     

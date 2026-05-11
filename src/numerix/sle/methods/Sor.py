@@ -1,14 +1,16 @@
 from ..Sle import Sle
 
 
-class GaussSeidel(Sle):
-    def __init__(self, is_verbose=False):
+class Sor(Sle):
+    def __init__(self, omega=1.25, is_verbose=False):
         super().__init__(is_verbose)
+        self.omega = omega
 
     def _compute_next_arguments(self, old_args):
         args = list(old_args)
         for i, func in enumerate(self.functions):
-            args[i] = func(*args)
+            gs = func(*args)
+            args[i] = self.omega * gs + (1 - self.omega) * old_args[i]
         return tuple(args)
 
 if __name__ == "__main__":
@@ -16,7 +18,7 @@ if __name__ == "__main__":
     # -x + 11y - z = 25
     # 2x - y + 10z = -11
     #
-    # Rearranged into gauss form:
+    # Rearranged into sor form:
     # x = (6 + y - 2z) / 10
     # y = (25 + x + z) / 11
     # z = (-11 - 2x + y) / 10
@@ -30,12 +32,12 @@ if __name__ == "__main__":
     def g3(x, y, z):
         return (-11 - 2 * x + y) / 10
 
-    gauss = GaussSeidel()
-    gauss.add_function(g1)
-    gauss.add_function(g2)
-    gauss.add_function(g3)
+    sor = Sor(1.25)
+    sor.add_function(g1)
+    sor.add_function(g2)
+    sor.add_function(g3)
 
-    solution = gauss.calculate(
+    solution = sor.calculate(
         ea_tol=1e-6
     )
 
@@ -51,5 +53,5 @@ if __name__ == "__main__":
     print(f"2x - y + 10z = {2*x - y + 10*z:.6f} (should be -11)")
 
     print("\nIterations:")
-    print(gauss.get_iterations())
+    print(sor.get_iterations())
     

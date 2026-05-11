@@ -78,5 +78,35 @@ class Sle(Numerix):
             else:
                 errors.append(new - old)
         return errors
-
     # endregion
+    
+    #region CALCULATE
+    def _compute_next_arguments(self, old_args):
+        # to be overridden
+        pass
+
+    def calculate(self, ea_tol=1e-6, max_iter=100):
+        if self._argument_count != len(self.functions):
+            raise ValueError(
+                f"Arguments count must be the same as the number of functions.\n"
+                + f"Arguments count: {self._argument_count}\n"
+                + f"Functions count: {len(self.functions)}"
+            )
+        self.iterations = []
+
+        args = self.create_first_arguments()
+        self.iterations.append(self.create_iteration(0,args))
+
+        for i in range(max_iter):
+            old_args = args
+            args = self._compute_next_arguments(old_args)
+            iteration = self.create_iteration(i+1,args, old_args)
+            self.iterations.append(iteration)
+            ea = iteration["|ea|"]
+            residuals = [abs(iteration[func.__name__]) for func in self.functions]
+            max_residual = max(residuals)
+            if ea is not None and ea < ea_tol:
+                return args
+        Warning(f"Method did not converge within {max_iter} iterations")
+        return args
+    #endregion
