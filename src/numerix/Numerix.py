@@ -79,9 +79,10 @@ class Numerix:
                 f"got {arg_count}."
             )
 
-    def _validate_function(self, function: Callable):
+    def _validate_function(self, function: Callable,check_arg = True):
         self.__check_callable(function)
-        self.__check_arg_count(function)
+        if check_arg:
+            self.__check_arg_count(function)
 
     def add_function(self, function: Callable):
         """

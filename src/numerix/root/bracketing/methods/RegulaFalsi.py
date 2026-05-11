@@ -89,7 +89,7 @@ if __name__ == "__main__":
         return x**3 - x - 2
 
     b = RegulaFalsi()
-    b.add_function(f)
+    b.function = f
     root = b.calculate(low=1, upper=2, ea_tol=1e-6)
 
     print(f"\nRoot found: {root:.6f}")
