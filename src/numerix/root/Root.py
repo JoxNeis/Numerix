@@ -8,7 +8,11 @@ class Root(Numerix):
         self.argument_count = None
         self.functions.clear()
         super().add_function(function)
-        self.function = self.functions[0]
+        
+    @property
+    def function(self):
+        return self.functions[0]
+
         
     
     

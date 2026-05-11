@@ -16,3 +16,4 @@ class Bracketing(Root):
                 "Function values at the interval endpoints must have opposite signs "
                 "(i.e., f(low) * f(upper) < 0)."
             )
+
