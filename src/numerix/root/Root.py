@@ -1,4 +1,5 @@
 from ..Numerix import Numerix
+from typing import Callable
 
 
 class Root(Numerix):
@@ -10,6 +11,6 @@ class Root(Numerix):
         return self._function
 
     @function.setter
-    def function(self, value):
+    def function(self, value:Callable):
         self._validate_function(value,check_arg=False)
         self._function = value

@@ -1,4 +1,5 @@
 from ..Open import Open
+from typing import Callable
 
 
 class FixedPointIteration(Open):
@@ -11,8 +12,8 @@ class FixedPointIteration(Open):
         return self._gfunction
 
     @gfunction.setter
-    def gfunction(self, value):
-        self._validate_function(value,check_arg=False)
+    def gfunction(self, value: Callable):
+        self._validate_function(value, check_arg=False)
         self._gfunction = value
 
     def calculate(self, x0, ea_tol=1e-6, res_tol=1e-6, max_iter=100):
@@ -51,7 +52,11 @@ class FixedPointIteration(Open):
         for iteration in range(1, max_iter + 1):
             new_x = self.gfunction(x)
 
-            fx = self.function(new_x) if self.function is not None else self.gfunction(new_x) - new_x
+            fx = (
+                self.function(new_x)
+                if self.function is not None
+                else self.gfunction(new_x) - new_x
+            )
 
             if new_x != 0:
                 ea = (new_x - x) / new_x
